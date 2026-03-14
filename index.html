@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>hcs-llm-autotrainer-web v1 beta</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <div class="app" id="app">
+    <header class="topbar glass card">
+      <div class="brand-wrap">
+        <h1 data-i18n="app.title">hcs-llm-autotrainer-web v1 beta</h1>
+        <p data-i18n="app.tagline">Train tiny language models directly in your browser.</p>
+      </div>
+      <div class="status-cluster">
+        <span class="chip" id="gpuChip">GPU: --</span>
+        <span class="chip" id="saveChip">Autosave: --</span>
+        <label class="sr-only" for="langSelect" data-i18n="label.language">Language</label>
+        <select id="langSelect" class="select compact"></select>
+      </div>
+    </header>
+
+    <main class="grid">
+      <aside class="left card glass">
+        <h2 data-i18n="panel.project">Project</h2>
+        <div class="meta-list" id="projectMeta"></div>
+
+        <h3 data-i18n="panel.experiments">Experiments</h3>
+        <div class="vstack">
+          <button class="btn" id="newExperimentBtn" data-i18n="btn.newExperiment">New Experiment</button>
+          <button class="btn" id="cloneExperimentBtn" data-i18n="btn.cloneExperiment">Clone + 1 Variable</button>
+          <div id="experimentList" class="scroll mini-list"></div>
+        </div>
+
+        <h3 data-i18n="panel.checkpoints">Checkpoints</h3>
+        <div id="checkpointList" class="scroll mini-list"></div>
+      </aside>
+
+      <section class="center card glass">
+        <div class="tabs" id="mainTabs">
+          <button data-tab="idea" class="tab active" data-i18n="tab.idea">Idea</button>
+          <button data-tab="program" class="tab" data-i18n="tab.program">Program</button>
+          <button data-tab="dataset" class="tab" data-i18n="tab.dataset">Dataset Builder</button>
+          <button data-tab="tokenizer" class="tab" data-i18n="tab.tokenizer">Tokenizer</button>
+          <button data-tab="training" class="tab" data-i18n="tab.training">Training</button>
+          <button data-tab="compare" class="tab" data-i18n="tab.compare">Compare Runs</button>
+        </div>
+
+        <section data-pane="idea" class="pane active">
+          <label for="ideaInput" data-i18n="label.ideaInput">Describe your experiment idea</label>
+          <textarea id="ideaInput" rows="4" placeholder="train a tiny story generator"></textarea>
+          <div class="row">
+            <button class="btn primary" id="derivePlanBtn" data-i18n="btn.derivePlan">Derive Experiment Plan</button>
+          </div>
+          <pre id="planView" class="output"></pre>
+        </section>
+
+        <section data-pane="program" class="pane">
+          <label for="programEditor" data-i18n="label.program">program.md</label>
+          <textarea id="programEditor" rows="14"></textarea>
+        </section>
+
+        <section data-pane="dataset" class="pane">
+          <div class="grid-2">
+            <div>
+              <label data-i18n="label.pasteText">Paste text source</label>
+              <textarea id="datasetTextInput" rows="5"></textarea>
+              <button class="btn" id="addTextSourceBtn" data-i18n="btn.addTextSource">Add Text Source</button>
+
+              <label data-i18n="label.uploadFiles">Upload text files</label>
+              <input id="datasetFileInput" type="file" accept=".txt,.md,.csv,.json" multiple />
+
+              <label data-i18n="label.webSearch">Web source discovery (Wikipedia)</label>
+              <input id="webQueryInput" type="text" placeholder="quantum computing" />
+              <button class="btn" id="webSearchBtn" data-i18n="btn.searchWeb">Search Sources</button>
+              <div id="webResults" class="scroll mini-list"></div>
+            </div>
+            <div>
+              <h4 data-i18n="panel.datasetPipeline">Dataset Pipeline</h4>
+              <div class="row gap">
+                <button class="btn" id="buildDatasetBtn" data-i18n="btn.buildDataset">Build Dataset</button>
+                <button class="btn" id="splitDatasetBtn" data-i18n="btn.splitDataset">Train/Val Split</button>
+              </div>
+              <div id="datasetStats" class="meta-list"></div>
+              <div id="datasetWarnings" class="warnings"></div>
+              <div id="datasetSnippets" class="scroll mini-list"></div>
+            </div>
+          </div>
+        </section>
+
+        <section data-pane="tokenizer" class="pane">
+          <div class="grid-2">
+            <div>
+              <label data-i18n="label.vocabSize">Vocabulary Size</label>
+              <input type="number" id="vocabSizeInput" min="64" max="8192" step="64" value="512" />
+              <div class="row gap">
+                <button class="btn" id="trainTokenizerBtn" data-i18n="btn.trainTokenizer">Train Tokenizer</button>
+                <button class="btn" id="exportTokenizerBtn" data-i18n="btn.exportTokenizer">Export Tokenizer</button>
+                <button class="btn" id="importTokenizerBtn" data-i18n="btn.importTokenizer">Import Tokenizer</button>
+                <input id="importTokenizerFile" hidden type="file" accept="application/json" />
+              </div>
+              <label data-i18n="label.tokenizePreview">Encode/Decode Preview</label>
+              <textarea id="tokenPreviewInput" rows="4"></textarea>
+              <button class="btn" id="runTokenPreviewBtn" data-i18n="btn.runPreview">Run Preview</button>
+              <pre id="tokenPreviewOutput" class="output"></pre>
+            </div>
+            <div>
+              <h4 data-i18n="panel.tokenizerStatus">Tokenizer Status</h4>
+              <div id="tokenizerStats" class="meta-list"></div>
+              <div id="tokenizerWarnings" class="warnings"></div>
+            </div>
+          </div>
+        </section>
+
+        <section data-pane="training" class="pane">
+          <div class="grid-2">
+            <div>
+              <label data-i18n="label.modelPreset">Model Preset</label>
+              <select id="presetSelect">
+                <option value="tiny">Tiny</option>
+                <option value="small">Small</option>
+                <option value="experimental">Experimental</option>
+              </select>
+              <label data-i18n="label.trainSteps">Training Steps</label>
+              <input type="number" id="trainStepsInput" min="20" max="2000" value="200" />
+              <label data-i18n="label.batchSize">Batch Size</label>
+              <input type="number" id="batchSizeInput" min="1" max="64" value="8" />
+              <label data-i18n="label.seqLen">Sequence Length</label>
+              <input type="number" id="seqLenInput" min="16" max="512" value="64" />
+              <div class="row gap">
+                <button class="btn primary" id="startTrainingBtn" data-i18n="btn.startTraining">Start Training</button>
+                <button class="btn" id="pauseTrainingBtn" data-i18n="btn.pauseTraining">Pause</button>
+                <button class="btn" id="resumeTrainingBtn" data-i18n="btn.resumeTraining">Resume</button>
+              </div>
+              <div id="runBadge" class="chip">Idle</div>
+            </div>
+            <div>
+              <h4 data-i18n="panel.tasks">Tasks</h4>
+              <div id="taskList" class="scroll mini-list"></div>
+              <h4 data-i18n="panel.trainingHealth">Training Health</h4>
+              <div id="trainingHealth" class="meta-list"></div>
+            </div>
+          </div>
+        </section>
+
+        <section data-pane="compare" class="pane">
+          <h3 data-i18n="panel.runComparison">Run Comparison</h3>
+          <div id="compareGrid" class="compare-grid"></div>
+        </section>
+      </section>
+
+      <aside class="right card glass">
+        <h2 data-i18n="panel.monitor">Live Monitor</h2>
+        <div class="progress-wrap">
+          <div class="progress"><div id="progressBar"></div></div>
+          <small id="progressLabel">0%</small>
+        </div>
+        <canvas id="lossChart" width="320" height="180" aria-label="Loss chart"></canvas>
+        <div id="statusChips" class="chip-wrap"></div>
+        <div id="healthList" class="meta-list"></div>
+      </aside>
+    </main>
+
+    <section class="bottom card glass">
+      <div class="row wrap gap">
+        <button class="btn" id="exportProjectBtn" data-i18n="btn.exportProject">Export Project</button>
+        <button class="btn" id="importProjectBtn" data-i18n="btn.importProject">Import Project</button>
+        <input hidden id="importProjectFile" type="file" accept="application/json" />
+        <button class="btn" id="downloadCheckpointBtn" data-i18n="btn.downloadCheckpointBundle">Download Checkpoint Bundle</button>
+        <button class="btn" id="downloadDatasetBtn" data-i18n="btn.downloadDatasetBundle">Download Dataset Bundle</button>
+      </div>
+      <h3 data-i18n="panel.logs">Logs</h3>
+      <div id="logView" class="log-view scroll"></div>
+    </section>
+
+    <footer class="footer">Made with ❤️ by hcsmedia</footer>
+  </div>
+
+  <dialog id="languageDialog" class="lang-dialog">
+    <form method="dialog" class="card glass">
+      <h2 data-i18n="dialog.pickLanguage">Choose your language</h2>
+      <select id="initialLangSelect" class="select"></select>
+      <div class="row gap">
+        <button class="btn primary" id="confirmLanguageBtn" value="ok" data-i18n="btn.continue">Continue</button>
+      </div>
+    </form>
+  </dialog>
+
+  <input hidden id="renameCheckpointInput" />
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
