@@ -34,7 +34,11 @@ Was wir gebaut haben:
 3. Fallback: **StarterLM (eingebaut)**, sofort nutzbar ohne Download
 4. Optional: andere GGUF-Modelle direkt aus Hugging Face laden (`repo` + `file`)
 5. Volle Basis-Customization (Temperature, max tokens, style) bei einfacher UX + 1-Klick Workflows
-6. Device-aware Defaults (Threads, Mobile)
+6. Export: Checkpoints/Run-Metriken als `.safetensors`
+7. Autosave + periodische lokale Snapshots
+8. Optionales Google Drive Backup (OAuth Login im Browser)
+9. Mehr Visualisierung: Loss, Throughput, Val-Chart + Model Gallery
+10. Device-aware Defaults (Threads, Mobile)
 
 Empfohlener Praxis-Plan:
 1. GGUF quantisiert halten (Q4/Q5)

@@ -29,7 +29,8 @@ const state = {
   llm: {
     runtime: null,
     modelLoaded: false,
-    modelRef: null
+    modelRef: null,
+    googleToken: null
   }
 };
 
@@ -557,7 +558,8 @@ function renderTraining(run = state.project.runs[0]) {
   ].map(([k,v])=>`<span class='chip'><b>${k}</b>: ${v}</span>`).join("");
   drawChart("lossChart", run.loss, "#20c574");
   drawChart("throughputChart", run.thr, "#5d8eff");
-  renderCompare(); renderCheckpoints();
+  drawChart("valChart", run.val, "#f4c04d");
+  renderCompare(); renderCheckpoints(); renderModelGallery();
 }
 
 function renderCompare() {
@@ -576,13 +578,149 @@ function renderLogs() {
 }
 
 function renderAll() {
-  renderFlow(); renderDataset(); renderTokenizer(); renderTasks(); renderExperiments(); renderCheckpoints(); renderTraining(); renderCompare(); renderLogs();
+  renderFlow(); renderDataset(); renderTokenizer(); renderTasks(); renderExperiments(); renderCheckpoints(); renderTraining(); renderCompare(); renderModelGallery(); renderLogs();
   el("gpuChip").textContent = `GPU: ${state.device.webgpu ? "WebGPU" : "Fallback"}`;
 }
 
 function download(name, data) {
   const b = new Blob([JSON.stringify(data, null, 2)], {type:"application/json"});
   const u = URL.createObjectURL(b); const a = document.createElement("a"); a.href = u; a.download = name; a.click(); URL.revokeObjectURL(u);
+}
+
+function downloadBinary(name, bytes, mime = "application/octet-stream") {
+  const b = new Blob([bytes], { type: mime });
+  const u = URL.createObjectURL(b);
+  const a = document.createElement("a");
+  a.href = u;
+  a.download = name;
+  a.click();
+  URL.revokeObjectURL(u);
+}
+
+function toSafeTensorsBytes(tensors) {
+  const encoder = new TextEncoder();
+  const header = {};
+  let offset = 0;
+  const dataBlocks = [];
+
+  for (const [name, arr] of Object.entries(tensors)) {
+    const f32 = new Float32Array(arr);
+    const block = new Uint8Array(f32.buffer);
+    header[name] = { dtype: "F32", shape: [f32.length], data_offsets: [offset, offset + block.byteLength] };
+    dataBlocks.push(block);
+    offset += block.byteLength;
+  }
+
+  const headerBytes = encoder.encode(JSON.stringify(header));
+  const prefix = new ArrayBuffer(8);
+  new DataView(prefix).setBigUint64(0, BigInt(headerBytes.length), true);
+
+  const out = new Uint8Array(8 + headerBytes.length + offset);
+  out.set(new Uint8Array(prefix), 0);
+  out.set(headerBytes, 8);
+  let ptr = 8 + headerBytes.length;
+  for (const b of dataBlocks) { out.set(b, ptr); ptr += b.byteLength; }
+  return out;
+}
+
+function exportLatestCheckpointSafeTensor() {
+  const run = state.project.runs[0];
+  if (!run) return setBackupStatus("Kein Run vorhanden.");
+  const tensors = {
+    train_loss: run.loss.slice(-512),
+    val_loss: run.val.slice(-512),
+    throughput: run.thr.slice(-512)
+  };
+  const bytes = toSafeTensorsBytes(tensors);
+  downloadBinary(`checkpoint-${run.id.slice(0,8)}.safetensors`, bytes, "application/octet-stream");
+  setBackupStatus("Checkpoint als .safetensors exportiert.");
+}
+
+function exportAllRunsSafeTensor() {
+  const runs = state.project.runs.slice(0, 8);
+  if (!runs.length) return setBackupStatus("Keine Runs zum Export.");
+  const tensors = {};
+  runs.forEach((r, i) => {
+    tensors[`run${i}_train_loss`] = r.loss.slice(-256);
+    tensors[`run${i}_val_loss`] = r.val.slice(-256);
+  });
+  const bytes = toSafeTensorsBytes(tensors);
+  downloadBinary(`all-runs-${Date.now()}.safetensors`, bytes, "application/octet-stream");
+  setBackupStatus("Alle Runs als .safetensors exportiert.");
+}
+
+function saveSnapshotNow() {
+  const snap = { savedAt: now(), project: state.project };
+  localStorage.setItem(`hcs.snapshot.${Date.now()}`, JSON.stringify(snap));
+  save("snapshot-manual");
+  setBackupStatus("Snapshot lokal gespeichert.");
+}
+
+function setBackupStatus(msg) {
+  if (el("backupStatus")) el("backupStatus").textContent = msg;
+}
+
+async function ensureGoogleScripts() {
+  if (window.google?.accounts?.oauth2) return;
+  await new Promise((resolve, reject) => {
+    const s = document.createElement("script");
+    s.src = "https://accounts.google.com/gsi/client";
+    s.onload = resolve; s.onerror = reject;
+    document.head.appendChild(s);
+  });
+}
+
+async function googleLogin() {
+  try {
+    await ensureGoogleScripts();
+    const clientId = el("gdriveClientIdInput")?.value.trim();
+    if (!clientId) return setBackupStatus("Bitte Google Client ID eintragen.");
+    localStorage.setItem("hcs.gdrive.clientId", clientId);
+    const tokenClient = window.google.accounts.oauth2.initTokenClient({
+      client_id: clientId,
+      scope: "https://www.googleapis.com/auth/drive.file",
+      callback: (resp) => {
+        if (resp?.access_token) {
+          state.llm.googleToken = resp.access_token;
+          setBackupStatus("Google Login erfolgreich.");
+          save("google-login");
+        }
+      }
+    });
+    tokenClient.requestAccessToken({ prompt: "consent" });
+  } catch (e) {
+    setBackupStatus(`Google Login Fehler: ${e?.message || e}`);
+  }
+}
+
+async function backupToGoogleDrive() {
+  const token = state.llm.googleToken;
+  if (!token) return setBackupStatus("Bitte zuerst Google Login klicken.");
+  const metadata = { name: `hcs-project-backup-${Date.now()}.json`, mimeType: "application/json" };
+  const file = new Blob([JSON.stringify(state.project, null, 2)], { type: "application/json" });
+  const form = new FormData();
+  form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
+  form.append("file", file);
+  const res = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: form
+  });
+  if (!res.ok) {
+    const tx = await res.text();
+    return setBackupStatus(`Drive Backup Fehler: ${tx.slice(0,120)}`);
+  }
+  setBackupStatus("Backup erfolgreich zu Google Drive hochgeladen.");
+}
+
+function renderModelGallery() {
+  const runs = state.project.runs.filter(r => r.state === "done" || r.step >= r.steps).slice(0, 8);
+  if (!runs.length) { el("modelGallery").innerHTML = "<small class='muted'>Noch keine fertigen Modelle.</small>"; return; }
+  el("modelGallery").innerHTML = runs.map((r) => `<div class='compare-card'>
+    <b>${r.id.slice(0,8)}</b> ${r.merged ? "✅ merged" : ""}<br/>
+    <small>preset ${r.preset} · best val ${Number(r.best||0).toFixed(4)}</small><br/>
+    <small>steps ${r.steps} · tokens ${r.tokens}</small>
+  </div>`).join("");
 }
 
 function bind() {
@@ -652,6 +790,11 @@ function bind() {
   el("workflowRow")?.querySelectorAll("button[data-wf]")?.forEach((b) => b.addEventListener("click", () => {
     applyWorkflowPreset(b.dataset.wf || "beginner");
   }));
+  el("exportSafeTensorBtn")?.addEventListener("click", exportLatestCheckpointSafeTensor);
+  el("exportAllSafeTensorBtn")?.addEventListener("click", exportAllRunsSafeTensor);
+  el("saveSnapshotBtn")?.addEventListener("click", saveSnapshotNow);
+  el("gdriveLoginBtn")?.addEventListener("click", googleLogin);
+  el("gdriveBackupBtn")?.addEventListener("click", backupToGoogleDrive);
 
   el("newExperimentBtn").addEventListener("click", ()=>{
     state.project.experiments.unshift({ id: crypto.randomUUID(), name:`Exp-${Date.now().toString().slice(-4)}`, preset:"tiny", lr:0.02 }); renderExperiments(); save("exp-new");
@@ -689,12 +832,14 @@ async function init() {
   el("llmTempInput").value = String(state.project.llmSettings.temp ?? 0.6);
   el("llmTokensInput").value = String(state.project.llmSettings.maxTokens ?? 96);
   el("llmStyleSelect").value = state.project.llmSettings.style || "balanced";
+  if (el("gdriveClientIdInput")) el("gdriveClientIdInput").value = localStorage.getItem("hcs.gdrive.clientId") || "";
   toggleLlmModeUI();
   el("ideaInput").value = state.project.idea || "";
   el("planView").textContent = state.project.plan || "";
   renderAll();
   if (!localStorage.getItem("hcs.lang.picked")) el("languageDialog").showModal();
   setInterval(()=>save("interval"), 20000);
+  setInterval(()=>saveSnapshotNow(), 5 * 60 * 1000);
 }
 
 init();

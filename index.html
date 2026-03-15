@@ -201,6 +201,20 @@
           <small id="llmStatus" class="muted">Bereit.</small>
           <pre id="ggufOutput" class="output"></pre>
           <pre id="assistOutput" class="output"></pre>
+
+          <hr class="sep" />
+          <h4>Backup & Export</h4>
+          <div class="row gap wrap">
+            <button class="btn" id="exportSafeTensorBtn">Checkpoint als .safetensors</button>
+            <button class="btn" id="exportAllSafeTensorBtn">Alle Runs als .safetensors</button>
+            <button class="btn" id="saveSnapshotBtn">Autosave Snapshot jetzt</button>
+          </div>
+          <div class="row gap wrap">
+            <input id="gdriveClientIdInput" type="text" placeholder="Google Client ID (OAuth)" />
+            <button class="btn" id="gdriveLoginBtn">Google Login</button>
+            <button class="btn" id="gdriveBackupBtn">Backup zu Google Drive</button>
+          </div>
+          <small id="backupStatus" class="muted">Backup nicht verbunden.</small>
         </section>
 
         <section class="pane" data-pane="compare">
@@ -214,8 +228,11 @@
         <div class="progress-wrap"><div class="progress"><div id="progressBar"></div></div><small id="progressLabel">0%</small></div>
         <canvas id="lossChart" width="320" height="140"></canvas>
         <canvas id="throughputChart" width="320" height="120"></canvas>
+        <canvas id="valChart" width="320" height="120"></canvas>
         <div id="statusChips" class="chip-wrap"></div>
         <div id="healthList" class="meta-list"></div>
+        <h4>Model Gallery</h4>
+        <div id="modelGallery" class="scroll mini-list"></div>
       </aside>
     </main>
 
