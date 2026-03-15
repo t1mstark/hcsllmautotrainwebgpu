@@ -16,7 +16,7 @@ const state = {
     sources: [],
     dataset: { chunks: [], train: [], val: [], stats: null, warnings: [] },
     tokenizer: { vocab: [], tokenToId: {}, idToToken: {}, vocabSize: 0 },
-    llmSettings: { mode: "starter", temp: 0.7, maxTokens: 96, style: "balanced" },
+    llmSettings: { mode: "gguf", temp: 0.6, maxTokens: 96, style: "balanced", repo: "google/gemma-3-4b-it-qat-q4_0-gguf", file: "model.gguf" },
     experiments: [{ id: crypto.randomUUID(), name: "Baseline", preset: "tiny", lr: 0.02 }],
     runs: [], checkpoints: [], tasks: [], logs: []
   },
@@ -38,7 +38,14 @@ const t = (k, fb = "") => state.dict[k] || fb || k;
 const now = () => new Date().toISOString();
 
 function ensureProjectDefaults() {
-  if (!state.project.llmSettings) state.project.llmSettings = { mode: "starter", temp: 0.7, maxTokens: 96, style: "balanced" };
+  if (!state.project.llmSettings) state.project.llmSettings = {};
+  const d = state.project.llmSettings;
+  if (!d.mode) d.mode = "gguf";
+  if (!d.temp) d.temp = 0.6;
+  if (!d.maxTokens) d.maxTokens = 96;
+  if (!d.style) d.style = "balanced";
+  if (!d.repo) d.repo = "google/gemma-3-4b-it-qat-q4_0-gguf";
+  if (!d.file) d.file = "model.gguf";
 }
 
 function save(reason = "autosave") {
@@ -314,6 +321,31 @@ function setLlmStatus(msg) {
   if (el("llmStatus")) el("llmStatus").textContent = msg;
 }
 
+function applyWorkflowPreset(kind = "beginner") {
+  if (kind === "beginner") {
+    el("llmModeSelect").value = "gguf";
+    el("ggufRepoInput").value = "google/gemma-3-4b-it-qat-q4_0-gguf";
+    el("ggufFileInput").value = "model.gguf";
+    el("llmTempInput").value = "0.6";
+    el("llmTokensInput").value = "96";
+    el("llmStyleSelect").value = "balanced";
+  }
+  if (kind === "fast") {
+    el("llmModeSelect").value = "starter";
+    el("llmTempInput").value = "0.7";
+    el("llmTokensInput").value = "72";
+    el("llmStyleSelect").value = "strict";
+  }
+  if (kind === "quality") {
+    el("llmModeSelect").value = "gguf";
+    el("llmTempInput").value = "0.7";
+    el("llmTokensInput").value = "144";
+    el("llmStyleSelect").value = "creative";
+  }
+  toggleLlmModeUI();
+  setLlmStatus(`Workflow aktiv: ${kind}`);
+}
+
 function toggleLlmModeUI() {
   const mode = el("llmModeSelect")?.value || "starter";
   if (el("ggufCard")) el("ggufCard").style.display = mode === "gguf" ? "block" : "none";
@@ -369,6 +401,9 @@ async function loadGGUFModel() {
   const repo = el("ggufRepoInput")?.value.trim();
   const file = el("ggufFileInput")?.value.trim();
   if (!repo || !file) return;
+  state.project.llmSettings.repo = repo;
+  state.project.llmSettings.file = file;
+  save("gguf-target");
   el("ggufOutput").textContent = "Lade GGUF Runtime...";
   setLlmStatus("Lade GGUF Modell...");
 
@@ -396,8 +431,8 @@ async function loadGGUFModel() {
     setLlmStatus("GGUF geladen. Bereit zum Generieren.");
     addTask("GGUF Modell geladen", "done");
   } catch (err) {
-    el("ggufOutput").textContent = `❌ GGUF Load Fehler: ${err?.message || err}`;
-    setLlmStatus("Fehler beim Laden des GGUF-Modells.");
+    el("ggufOutput").textContent = `❌ GGUF Load Fehler: ${err?.message || err}\n\nFallback: StarterLM verwenden.`;
+    setLlmStatus("GGUF fehlgeschlagen – auf StarterLM umschalten empfohlen.");
     log("error", `gguf load failed: ${err?.message || err}`);
   }
 }
@@ -409,7 +444,14 @@ async function runLlm() {
   const maxTokens = parseInt(el("llmTokensInput")?.value || "96", 10);
   const style = el("llmStyleSelect")?.value || "balanced";
 
-  state.project.llmSettings = { mode, temp: temperature, maxTokens, style };
+  state.project.llmSettings = {
+    mode,
+    temp: temperature,
+    maxTokens,
+    style,
+    repo: el("ggufRepoInput")?.value.trim() || state.project.llmSettings.repo,
+    file: el("ggufFileInput")?.value.trim() || state.project.llmSettings.file
+  };
   save("llm-settings");
 
   if (mode === "starter") {
@@ -607,6 +649,9 @@ function bind() {
   el("quickPromptRow")?.querySelectorAll("button[data-qp]")?.forEach((b) => b.addEventListener("click", () => {
     el("llmPromptInput").value = b.dataset.qp || "";
   }));
+  el("workflowRow")?.querySelectorAll("button[data-wf]")?.forEach((b) => b.addEventListener("click", () => {
+    applyWorkflowPreset(b.dataset.wf || "beginner");
+  }));
 
   el("newExperimentBtn").addEventListener("click", ()=>{
     state.project.experiments.unshift({ id: crypto.randomUUID(), name:`Exp-${Date.now().toString().slice(-4)}`, preset:"tiny", lr:0.02 }); renderExperiments(); save("exp-new");
@@ -638,8 +683,10 @@ async function init() {
   });
   await loadLanguage(state.lang);
   bind();
-  el("llmModeSelect").value = state.project.llmSettings.mode || "starter";
-  el("llmTempInput").value = String(state.project.llmSettings.temp ?? 0.7);
+  el("llmModeSelect").value = state.project.llmSettings.mode || "gguf";
+  el("ggufRepoInput").value = state.project.llmSettings.repo || "google/gemma-3-4b-it-qat-q4_0-gguf";
+  el("ggufFileInput").value = state.project.llmSettings.file || "model.gguf";
+  el("llmTempInput").value = String(state.project.llmSettings.temp ?? 0.6);
   el("llmTokensInput").value = String(state.project.llmSettings.maxTokens ?? 96);
   el("llmStyleSelect").value = state.project.llmSettings.style || "balanced";
   toggleLlmModeUI();

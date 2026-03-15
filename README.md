@@ -30,10 +30,11 @@ Kurzfassung:
 
 Was wir gebaut haben:
 1. **Beginner LLM Playground** im Tab **AI Assist**
-2. **StarterLM (eingebaut)** als Standard, sofort nutzbar ohne Download
-3. Optional: GGUF-Modelle direkt aus Hugging Face laden (`repo` + `file`)
-4. Volle Basis-Customization (Temperature, max tokens, style) bei einfacher UX
-5. Device-aware Defaults (Threads, Mobile)
+2. **Gemma GGUF quantized** als Standard-Workflow für Anfänger (aktuell 4B Q4_0 als stabile Nähe zu 3B)
+3. Fallback: **StarterLM (eingebaut)**, sofort nutzbar ohne Download
+4. Optional: andere GGUF-Modelle direkt aus Hugging Face laden (`repo` + `file`)
+5. Volle Basis-Customization (Temperature, max tokens, style) bei einfacher UX + 1-Klick Workflows
+6. Device-aware Defaults (Threads, Mobile)
 
 Empfohlener Praxis-Plan:
 1. GGUF quantisiert halten (Q4/Q5)

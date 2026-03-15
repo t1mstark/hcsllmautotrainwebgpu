@@ -82,7 +82,7 @@ textarea { resize: vertical; min-height: 80px; }
 .muted{opacity:.8;font-size:.9rem;margin:.2rem 0 .8rem}
 .llm-controls{margin:8px 0}
 #starterCard,#ggufCard{margin:8px 0}
-#quickPromptRow .btn{width:auto;white-space:nowrap}
+#quickPromptRow .btn,#workflowRow .btn{width:auto;white-space:nowrap}
 #llmStatus{display:block;margin:6px 2px}
 
 @media (min-width: 860px) {

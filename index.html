@@ -138,13 +138,20 @@
 
         <section class="pane" data-pane="assistant">
           <h3>Beginner LLM Playground</h3>
-          <p class="muted">Standard ist <b>StarterLM (eingebaut)</b>: sofort nutzbar ohne Download. Optional kannst du GGUF-Modelle von Hugging Face laden.</p>
+          <p class="muted">Standard ist <b>Gemma GGUF quantized (Beginner-Workflow)</b>. Falls Laden fehlschlägt, nutze StarterLM ohne Download.</p>
 
           <label>LLM Modus</label>
           <select id="llmModeSelect">
-            <option value="starter">StarterLM (eingebaut, empfohlen)</option>
-            <option value="gguf">GGUF von Hugging Face (optional)</option>
+            <option value="gguf">Gemma GGUF (Standard)</option>
+            <option value="starter">StarterLM (Fallback, eingebaut)</option>
           </select>
+
+          <label>Workflow (1-Klick für Anfänger)</label>
+          <div class="row gap wrap" id="workflowRow">
+            <button class="btn primary" data-wf="beginner">Beginner (empfohlen)</button>
+            <button class="btn" data-wf="fast">Fast Laptop</button>
+            <button class="btn" data-wf="quality">Quality</button>
+          </div>
 
           <div id="starterCard" class="compare-card">
             <b>StarterLM</b>
@@ -153,9 +160,10 @@
 
           <div id="ggufCard" class="compare-card" style="display:none;">
             <label>HF Repo (GGUF)</label>
-            <input id="ggufRepoInput" type="text" value="ggml-org/models" />
+            <input id="ggufRepoInput" type="text" value="google/gemma-3-4b-it-qat-q4_0-gguf" />
             <label>GGUF Datei</label>
-            <input id="ggufFileInput" type="text" value="tinyllamas/stories260K.gguf" />
+            <input id="ggufFileInput" type="text" value="model.gguf" />
+            <small class="muted">Hinweis: Gemma 3B GGUF ist kaum verfügbar, daher nutzen wir 4B Q4_0 als stabile Nähe.</small>
             <button class="btn" id="ggufLoadBtn">GGUF laden</button>
           </div>
 
