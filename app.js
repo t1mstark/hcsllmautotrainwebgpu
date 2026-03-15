@@ -70,6 +70,10 @@ async function loadLanguage(lang) {
     const k = n.getAttribute("data-i18n");
     if (state.dict[k]) n.textContent = state.dict[k];
   });
+  document.querySelectorAll("[data-i18n-placeholder]").forEach((n) => {
+    const k = n.getAttribute("data-i18n-placeholder");
+    if (state.dict[k]) n.setAttribute("placeholder", state.dict[k]);
+  });
 }
 
 function addTask(name, status = "planned") {
@@ -820,8 +824,9 @@ function bind() {
 
 async function init() {
   ensureProjectDefaults();
+  const langNames = { de: "Deutsch", en: "English", fr: "Français" };
   ["langSelect","initialLangSelect"].forEach(id => {
-    el(id).innerHTML = LANGS.map(l=>`<option value='${l}'>${l.toUpperCase()}</option>`).join("");
+    el(id).innerHTML = LANGS.map(l=>`<option value='${l}'>${langNames[l] || l.toUpperCase()}</option>`).join("");
     el(id).value = state.lang;
   });
   await loadLanguage(state.lang);

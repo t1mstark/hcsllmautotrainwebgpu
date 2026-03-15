@@ -43,11 +43,21 @@
           <button class="tab" data-tab="test" data-i18n="tab.test">LLM Test</button>
           <button class="tab" data-tab="assistant" data-i18n="tab.assistant">AI Assist</button>
           <button class="tab" data-tab="compare" data-i18n="tab.compare">Vergleich</button>
+          <button class="tab" data-tab="help" data-i18n="tab.help">Hilfe</button>
         </div>
 
         <section class="pane active" data-pane="idea">
+          <div class="compare-card guide-card">
+            <b data-i18n="help.quickStartTitle">Schnellstart (2 Minuten)</b>
+            <ol>
+              <li data-i18n="help.quickStart1">Idee eingeben und Plan erstellen</li>
+              <li data-i18n="help.quickStart2">Im Dataset-Tab mindestens 3 Quellen hinzufügen</li>
+              <li data-i18n="help.quickStart3">Dataset bauen und Tokenizer trainieren</li>
+              <li data-i18n="help.quickStart4">Training starten und danach im Assist testen</li>
+            </ol>
+          </div>
           <label data-i18n="label.ideaInput">Simple Idee eingeben</label>
-          <textarea id="ideaInput" rows="3" placeholder="z.B. tiny story generator"></textarea>
+          <textarea id="ideaInput" rows="3" data-i18n-placeholder="ph.idea"></textarea>
           <button id="derivePlanBtn" class="btn primary" data-i18n="btn.derivePlan">Plan automatisch erstellen</button>
           <pre id="planView" class="output"></pre>
         </section>
@@ -63,7 +73,7 @@
               <input id="datasetFileInput" type="file" multiple accept=".txt,.md,.csv,.json" />
 
               <label data-i18n="label.webSearch">WebSearch Quelle</label>
-              <input id="webQueryInput" type="text" placeholder="topic" />
+              <input id="webQueryInput" type="text" data-i18n-placeholder="ph.topic" />
               <div class="row gap">
                 <button class="btn" id="webSearchBtn" data-i18n="btn.searchWeb">WebSearch</button>
                 <button class="btn" id="wikiSearchBtn" data-i18n="btn.searchWiki">Wikipedia</button>
@@ -92,7 +102,7 @@
             <button class="btn" id="importTokenizerBtn" data-i18n="btn.importTokenizer">Import</button>
             <input hidden id="importTokenizerFile" type="file" accept="application/json" />
           </div>
-          <textarea id="tokenPreviewInput" rows="3" placeholder="test sentence"></textarea>
+          <textarea id="tokenPreviewInput" rows="3" data-i18n-placeholder="ph.tokenTest"></textarea>
           <button class="btn" id="runTokenPreviewBtn" data-i18n="btn.runPreview">Encode/Decode</button>
           <pre id="tokenPreviewOutput" class="output"></pre>
           <div id="tokenizerStats" class="meta-list"></div>
@@ -128,7 +138,7 @@
 
         <section class="pane" data-pane="test">
           <label data-i18n="label.testPrompt">Prompt zum Testen des trainierten Modells</label>
-          <textarea id="testPromptInput" rows="3" placeholder="Once upon a time"></textarea>
+          <textarea id="testPromptInput" rows="3" data-i18n-placeholder="ph.testPrompt"></textarea>
           <div class="row gap">
             <button class="btn" id="testModelBtn" data-i18n="btn.testModel">Test Generate</button>
             <button class="btn" id="mergeRunBtn" data-i18n="btn.mergeRun">Mit Original mergen</button>
@@ -170,7 +180,7 @@
           <div class="grid-2 llm-controls">
             <div>
               <label>Prompt</label>
-              <textarea id="llmPromptInput" rows="3" placeholder="Schreibe eine kurze freundliche Begrüßung für neue Nutzer."></textarea>
+              <textarea id="llmPromptInput" rows="3" data-i18n-placeholder="ph.llmPrompt"></textarea>
             </div>
             <div>
               <label>Kreativität (Temperature)</label>
@@ -210,7 +220,7 @@
             <button class="btn" id="saveSnapshotBtn">Autosave Snapshot jetzt</button>
           </div>
           <div class="row gap wrap">
-            <input id="gdriveClientIdInput" type="text" placeholder="Google Client ID (OAuth)" />
+            <input id="gdriveClientIdInput" type="text" data-i18n-placeholder="ph.googleClientId" />
             <button class="btn" id="gdriveLoginBtn">Google Login</button>
             <button class="btn" id="gdriveBackupBtn">Backup zu Google Drive</button>
           </div>
@@ -220,6 +230,37 @@
         <section class="pane" data-pane="compare">
           <h3 data-i18n="panel.runComparison">Run Comparison</h3>
           <div id="compareGrid" class="compare-grid"></div>
+        </section>
+
+        <section class="pane" data-pane="help">
+          <h3 data-i18n="help.title">Hilfe & Erklärungen</h3>
+          <div class="grid-2">
+            <div class="compare-card">
+              <b data-i18n="help.whatIsThis">Was ist diese App?</b>
+              <p data-i18n="help.whatIsThisDesc">Eine lokale Browser-App für Tiny-LLM-Experimente: Idee → Daten → Tokenizer → Training → Test.</p>
+            </div>
+            <div class="compare-card">
+              <b data-i18n="help.modes">LLM-Modi erklärt</b>
+              <p data-i18n="help.modesDesc">Gemma GGUF = realistischere Antworten (Download nötig). StarterLM = sofort startklar ohne Download.</p>
+            </div>
+            <div class="compare-card">
+              <b data-i18n="help.datasetTips">Dataset Tipps</b>
+              <p data-i18n="help.datasetTipsDesc">Nutze gemischte Quellen, kurze saubere Texte und mindestens 2.000 Tokens für stabile Resultate.</p>
+            </div>
+            <div class="compare-card">
+              <b data-i18n="help.trainingTips">Training Tipps</b>
+              <p data-i18n="help.trainingTipsDesc">Beginne mit tiny/small Preset und 200–400 Steps. Vergleiche Runs und ändere jeweils nur 1 Parameter.</p>
+            </div>
+          </div>
+          <div class="compare-card">
+            <b data-i18n="help.glossary">Mini-Glossar</b>
+            <ul>
+              <li data-i18n="help.g1">Loss: Fehlerwert (niedriger ist besser)</li>
+              <li data-i18n="help.g2">Val: Qualität auf Validierungsdaten</li>
+              <li data-i18n="help.g3">Tokenizer: zerlegt Text in Tokens</li>
+              <li data-i18n="help.g4">Checkpoint: Zwischenstand des Trainings</li>
+            </ul>
+          </div>
         </section>
       </section>
 

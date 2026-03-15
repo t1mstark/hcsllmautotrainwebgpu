@@ -42,8 +42,8 @@ textarea { resize: vertical; min-height: 80px; }
 .btn { cursor: pointer; transition: transform .14s ease, opacity .14s ease, box-shadow .14s ease; }
 .btn:hover { transform: translateY(-1px); box-shadow: 0 8px 18px rgba(44,102,255,.25); }
 .btn.primary { background: linear-gradient(135deg, #4f7cff, #8a5eff); border: none; }
-.tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
-.tab { width: auto; padding: 8px 12px; border-radius: 999px; }
+.tabs { display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 6px; margin-bottom: 8px; padding-bottom: 4px; }
+.tab { width: auto; padding: 8px 12px; border-radius: 999px; flex: 0 0 auto; }
 .tab.active { background: linear-gradient(135deg, #4f7cff, #7d56ff); border: none; }
 .pane { display: none; }
 .pane.active { display: block; }
@@ -84,6 +84,8 @@ textarea { resize: vertical; min-height: 80px; }
 #starterCard,#ggufCard{margin:8px 0}
 #quickPromptRow .btn,#workflowRow .btn{width:auto;white-space:nowrap}
 #llmStatus{display:block;margin:6px 2px}
+.guide-card ol{margin:.4rem 0 .2rem 1rem;padding:0}
+.guide-card li{margin:.2rem 0}
 
 @media (min-width: 860px) {
   .grid-2 { grid-template-columns: 1fr 1fr; }
@@ -91,6 +93,13 @@ textarea { resize: vertical; min-height: 80px; }
 
 @media (min-width: 1150px) {
   .grid { grid-template-columns: 280px 1fr 300px; }
+}
+
+@media (max-width: 640px) {
+  .app { padding: 8px; gap: 8px; }
+  .card { padding: 10px; border-radius: 12px; }
+  input, textarea, select, button { padding: 9px; font-size: 15px; }
+  .row.gap { gap: 6px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -1,57 +1,124 @@
-# hcs-llm-autotrainer-web v2 beta
+# hcs-llm-autotrainer-web (final)
 
-Made with ❤️ by hcsmedia
+Modern browser app to prototype tiny LLM workflows locally.
 
-## Neu in v2
-- Anfänger-Workflow (6 Schritte) für einfache Eingaben
-- Mehr Quellen: Paste, Files, Wikipedia, WebSearch (DuckDuckGo API)
-- Dataset-Builder mit Clean/Dedup/Chunk/Score/Split + Warnungen
-- AI-unterstützte Datengenerierung (synthetic data)
+Built by **@timfromhcs** and **@hcsmediacorp**.
+
+---
+
+## What this is
+
+A static, frontend-only web app for beginner-friendly LLM experimentation:
+
+1. Idea →
+2. Data collection/cleanup →
+3. Tokenizer training →
+4. Tiny training simulation/monitoring →
+5. Model testing, comparison, export, backup
+
+No backend is required for core functionality.
+
+---
+
+## Core features
+
+- Beginner workflow (guided steps + help tab)
+- Multi-language UI: **DE / EN / FR**
+- Dataset tools: paste/files/web/wiki + chunk/dedup/split
 - Tokenizer train/import/export + encode/decode preview
-- Training mit besseren Visuals:
-  - Loss-Chart
-  - Throughput-Chart
-  - Statuschips (good/stagnating/overfit)
-  - Checkpoint-Management
-- Trainiertes Modell testen (Generate)
-- Run in Baseline „mergen“ (Experiment-Update)
-- Compare-View mit Best-Run-Highlight
-- EN/DE/FR, Autosave, Import/Export Bundles, mobile-first
+- Training monitor with charts:
+  - Loss
+  - Validation
+  - Throughput
+- Checkpoints + compare view + model gallery
+- LLM playground:
+  - **Gemma GGUF quantized** default workflow
+  - StarterLM fallback (no model download)
+- Export:
+  - Project JSON
+  - Dataset/checkpoint bundles
+  - `.safetensors` metric exports
+- Autosave + periodic snapshots
+- Optional Google Drive backup via OAuth (client-side)
 
-## Hinweis zur "AI assisted mit WebGPU LLM"
-In dieser Version ist der Assist-Teil device-aware und lokal implementiert.
-Die echten WebGPU-Kernel-Dateien (`webgpu/*.wgsl`) bleiben vorbereitet für den nächsten Schritt (echte Compute-Training-Kerne).
+---
 
-## GGUF + WebGPU Research (Stand jetzt)
-Kurzfassung:
-- **GGUF im Browser**: stabil über **wllama (WASM/CPU)**
-- **WebGPU im Browser**: sehr gut für WebLLM/ONNX-Workloads, aber **nicht der Standardpfad für GGUF**
-- **"GGUF + WebGPU für alles"** ist aktuell noch nicht überall robust production-ready
+## Tech base
 
-Was wir gebaut haben:
-1. **Beginner LLM Playground** im Tab **AI Assist**
-2. **Gemma GGUF quantized** als Standard-Workflow für Anfänger (aktuell 4B Q4_0 als stabile Nähe zu 3B)
-3. Fallback: **StarterLM (eingebaut)**, sofort nutzbar ohne Download
-4. Optional: andere GGUF-Modelle direkt aus Hugging Face laden (`repo` + `file`)
-5. Volle Basis-Customization (Temperature, max tokens, style) bei einfacher UX + 1-Klick Workflows
-6. Export: Checkpoints/Run-Metriken als `.safetensors`
-7. Autosave + periodische lokale Snapshots
-8. Optionales Google Drive Backup (OAuth Login im Browser)
-9. Mehr Visualisierung: Loss, Throughput, Val-Chart + Model Gallery
-10. Device-aware Defaults (Threads, Mobile)
+- Plain HTML/CSS/JavaScript (ES modules)
+- Browser APIs (localStorage, fetch, file APIs)
+- Optional GGUF runtime via `wllama`
+- Optional Google OAuth + Drive upload API
+- GitHub Actions + GitHub Pages deployment
 
-Empfohlener Praxis-Plan:
-1. GGUF quantisiert halten (Q4/Q5)
-2. große GGUF-Dateien splitten/chunken
-3. WebGPU für Training/Visuals/Compute-Pipeline nutzen
-4. GGUF-Inferenz lokal über wllama für maximale Browser-Kompatibilität
+---
 
-## Lokal starten
+## Try it live
+
+GitHub Pages:
+
+**https://t1mstark.github.io/hcsllmautotrainwebgpu/**
+
+If cached, use a cache-buster:
+
+`https://t1mstark.github.io/hcsllmautotrainwebgpu/?v=final`
+
+---
+
+## Run locally
+
 ```bash
-cd hcs-llm-autotrainer-web-v1-beta
+git clone https://github.com/t1mstark/hcsllmautotrainwebgpu.git
+cd hcsllmautotrainwebgpu
 python3 -m http.server 8080
 ```
-Dann öffnen: `http://127.0.0.1:8080`
 
-## Deploy
-GitHub Pages (branch `main`, root `/`).
+Open: `http://127.0.0.1:8080`
+
+---
+
+## How to modify
+
+- UI layout: `index.html`
+- Styling/theme/responsive: `style.css`
+- Logic/features: `app.js`
+- Translations: `languages/de.json`, `languages/en.json`, `languages/fr.json`
+- WebGPU kernels (prepared): `webgpu/*.wgsl`
+
+Recommended workflow:
+
+```bash
+git checkout -b feature/my-change
+# edit files
+git add .
+git commit -m "My change"
+git push origin feature/my-change
+```
+
+---
+
+## Deploy flow (GitHub Pages)
+
+- Push to `main`
+- Workflow `.github/workflows/pages.yml` builds/deploys automatically
+- Pages should be configured to **GitHub Actions** source
+
+---
+
+## Google OAuth setup (manual)
+
+Google Cloud OAuth cannot be auto-enabled from this repo alone. You must configure it in your Google Cloud project:
+
+1. Create OAuth Client ID (Web)
+2. Add authorized JavaScript origin:
+   - `https://t1mstark.github.io`
+3. Use this Client ID in app field: `Google Client ID (OAuth)`
+4. Click **Google Login**, then **Backup zu Google Drive**
+
+---
+
+## Notes
+
+- GGUF in browser works best via WASM runtime pathways today.
+- WebGPU availability depends on browser/device.
+- This project focuses on accessible experimentation, not production-scale training.
