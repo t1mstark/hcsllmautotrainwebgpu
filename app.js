@@ -29,8 +29,7 @@ const state = {
   llm: {
     runtime: null,
     modelLoaded: false,
-    modelRef: null,
-    googleToken: null
+    modelRef: null
   }
 };
 
@@ -664,59 +663,6 @@ function setBackupStatus(msg) {
   if (el("backupStatus")) el("backupStatus").textContent = msg;
 }
 
-async function ensureGoogleScripts() {
-  if (window.google?.accounts?.oauth2) return;
-  await new Promise((resolve, reject) => {
-    const s = document.createElement("script");
-    s.src = "https://accounts.google.com/gsi/client";
-    s.onload = resolve; s.onerror = reject;
-    document.head.appendChild(s);
-  });
-}
-
-async function googleLogin() {
-  try {
-    await ensureGoogleScripts();
-    const clientId = el("gdriveClientIdInput")?.value.trim();
-    if (!clientId) return setBackupStatus("Bitte Google Client ID eintragen.");
-    localStorage.setItem("hcs.gdrive.clientId", clientId);
-    const tokenClient = window.google.accounts.oauth2.initTokenClient({
-      client_id: clientId,
-      scope: "https://www.googleapis.com/auth/drive.file",
-      callback: (resp) => {
-        if (resp?.access_token) {
-          state.llm.googleToken = resp.access_token;
-          setBackupStatus("Google Login erfolgreich.");
-          save("google-login");
-        }
-      }
-    });
-    tokenClient.requestAccessToken({ prompt: "consent" });
-  } catch (e) {
-    setBackupStatus(`Google Login Fehler: ${e?.message || e}`);
-  }
-}
-
-async function backupToGoogleDrive() {
-  const token = state.llm.googleToken;
-  if (!token) return setBackupStatus("Bitte zuerst Google Login klicken.");
-  const metadata = { name: `hcs-project-backup-${Date.now()}.json`, mimeType: "application/json" };
-  const file = new Blob([JSON.stringify(state.project, null, 2)], { type: "application/json" });
-  const form = new FormData();
-  form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
-  form.append("file", file);
-  const res = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${token}` },
-    body: form
-  });
-  if (!res.ok) {
-    const tx = await res.text();
-    return setBackupStatus(`Drive Backup Fehler: ${tx.slice(0,120)}`);
-  }
-  setBackupStatus("Backup erfolgreich zu Google Drive hochgeladen.");
-}
-
 function renderModelGallery() {
   const runs = state.project.runs.filter(r => r.state === "done" || r.step >= r.steps).slice(0, 8);
   if (!runs.length) { el("modelGallery").innerHTML = "<small class='muted'>Noch keine fertigen Modelle.</small>"; return; }
@@ -797,8 +743,6 @@ function bind() {
   el("exportSafeTensorBtn")?.addEventListener("click", exportLatestCheckpointSafeTensor);
   el("exportAllSafeTensorBtn")?.addEventListener("click", exportAllRunsSafeTensor);
   el("saveSnapshotBtn")?.addEventListener("click", saveSnapshotNow);
-  el("gdriveLoginBtn")?.addEventListener("click", googleLogin);
-  el("gdriveBackupBtn")?.addEventListener("click", backupToGoogleDrive);
 
   el("newExperimentBtn").addEventListener("click", ()=>{
     state.project.experiments.unshift({ id: crypto.randomUUID(), name:`Exp-${Date.now().toString().slice(-4)}`, preset:"tiny", lr:0.02 }); renderExperiments(); save("exp-new");
@@ -837,7 +781,6 @@ async function init() {
   el("llmTempInput").value = String(state.project.llmSettings.temp ?? 0.6);
   el("llmTokensInput").value = String(state.project.llmSettings.maxTokens ?? 96);
   el("llmStyleSelect").value = state.project.llmSettings.style || "balanced";
-  if (el("gdriveClientIdInput")) el("gdriveClientIdInput").value = localStorage.getItem("hcs.gdrive.clientId") || "";
   toggleLlmModeUI();
   el("ideaInput").value = state.project.idea || "";
   el("planView").textContent = state.project.plan || "";

@@ -39,7 +39,6 @@ No backend is required for core functionality.
   - Dataset/checkpoint bundles
   - `.safetensors` metric exports
 - Autosave + periodic snapshots
-- Optional Google Drive backup via OAuth (client-side)
 
 ---
 
@@ -48,7 +47,6 @@ No backend is required for core functionality.
 - Plain HTML/CSS/JavaScript (ES modules)
 - Browser APIs (localStorage, fetch, file APIs)
 - Optional GGUF runtime via `wllama`
-- Optional Google OAuth + Drive upload API
 - GitHub Actions + GitHub Pages deployment
 
 ---
@@ -104,16 +102,6 @@ git push origin feature/my-change
 - Pages should be configured to **GitHub Actions** source
 
 ---
-
-## Google OAuth setup (manual)
-
-Google Cloud OAuth cannot be auto-enabled from this repo alone. You must configure it in your Google Cloud project:
-
-1. Create OAuth Client ID (Web)
-2. Add authorized JavaScript origin:
-   - `https://t1mstark.github.io`
-3. Use this Client ID in app field: `Google Client ID (OAuth)`
-4. Click **Google Login**, then **Backup zu Google Drive**
 
 ---
 
